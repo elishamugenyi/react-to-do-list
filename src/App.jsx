@@ -1,66 +1,54 @@
 import { useState,useEffect } from 'react'
-//import reactLogo from './assets/react.svg'
-//import viteLogo from '/vite.svg'
-import './App.css'
+import './styles.css'
+import { NewTodoForm } from './NewTodoForm'
+import { TodoList } from './TodoList'
 
 function App() {
-  const [items, setItems] = useState([])
-  const [newItem, setNewItem] = useState('')
+  const [todos, setTodos] = useState(() => {
+    const localValue = localStorage.getItem('ITEMS')
+    if (localValue == null) return[]
 
-  //load items from local storage, this helps avoid loss of items on page reload
-  useEffect(() => { 
-    const storedItems = JSON.parse(localStorage.getItem('todoItems'))
-    if (storedItems) {
-      setItems(storedItems);
-    }
-  }, [])
+    return JSON.parse(localValue)
+  })
 
   //save items to local storage whenever an item changes
   useEffect(() => {
-    localStorage.setItem('todoItems', JSON.stringify(items))
-  }, [items])
+    localStorage.setItem('ITEMS', JSON.stringify(todos))
+  }, [todos])
 
-  //functionality to handle add item
-  const handleAddItem = () => {
-    if (newItem.trim() !== '') {
-      setItems([...items, { text: newItem, done: false }])
-      setNewItem('')
-    }
+
+  function addTodo(title) {
+    setTodos(currentTodos => {
+      return [
+        ...currentTodos,
+        { id: crypto.randomUUID(), title, completed: false },
+      ]
+    })
   }
 
-  //functionality for delete item
-  const handleDeleteItem = (index) => {
-    const updatedItems = items.filter((item, i) => i !== index)
-    setItems(updatedItems)
+  function toggleTodo (id, completed) {
+    setTodos(currentTodos => {
+      return currentTodos.map(todo =>{
+        if (todo.id === id) {
+          return {...todo, completed }
+        }
+
+        return todo
+      })
+    })
   }
 
-  //Functionality for toggle items
-  const handleToggleDone = (index) => {
-    const updatedItems = items.map((item, i) =>
-    i === index ? { ...item, done: !item.done } : item )
-    setItems(updatedItems)
+  function deleteTodo(id) {
+    setTodos(currentTodos => {
+      return currentTodos.filter(todo =>todo.id !== id)
+    })
   }
-
   return (
-    < div className="App">
-      <label> New Item</label>
-      <input type="text" value={newItem} onChange={(e) => setNewItem(e.target.value)} />
-      <button onClick={handleAddItem}> Add</button>
-      <h1>To Do List</h1>
-      {items.length === 0 ? ( 
-        <p>No To DOs</p>
-      ) : (
-        <ul>
-          {items.map((item, index) => (
-            <li key={index}>
-              <input type="checkbox" checked={item.done} onChange={() => handleToggleDone(index)}/>
-              {item.text}
-              <button onClick={() => handleDeleteItem(index)}> Delete </button>
-            </li>
-          ))}
-        </ul>
-        )}
-    </div>
+    <>
+    <NewTodoForm onSubmit={addTodo} />
+    <h1 className="header">Todo List</h1>
+    <TodoList todos={todos} toggleTodo={toggleTodo} deleteTodo={deleteTodo} />
+    </>
   )
 }
 
